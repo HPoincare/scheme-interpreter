@@ -1,20 +1,11 @@
-"""
-6.1010 Spring "23 Lab 11: LISP Interpreter Part 1
-"""
-#!/usr/bin/env python3
-
 import sys
-import doctest
 import traceback
 
 sys.setrecursionlimit(20_000)
 
-# NO ADDITIONAL IMPORTS!
-
 #############################
 # Scheme-related Exceptions #
 #############################
-
 
 class SchemeError(Exception):
     """
@@ -25,7 +16,6 @@ class SchemeError(Exception):
 
     pass
 
-
 class SchemeSyntaxError(SchemeError):
     """
     Exception to be raised when trying to evaluate a malformed expression.
@@ -33,14 +23,12 @@ class SchemeSyntaxError(SchemeError):
 
     pass
 
-
 class SchemeNameError(SchemeError):
     """
     Exception to be raised when looking up a name that has not been defined.
     """
 
     pass
-
 
 class SchemeEvaluationError(SchemeError):
     """
@@ -50,16 +38,14 @@ class SchemeEvaluationError(SchemeError):
 
     pass
 
-
-
 ##############
-# Frame Class #
+# Object Classes #
 ##############
-
 
 class Frame:
     """
-    Objects that represent enclosing frames
+    Objects that represent enclosing frames. These are necessary for establish the 
+    known values at a given point in evaluation. 
     """
     def __init__(self, parent=None):
         self.assignments = {}
@@ -111,11 +97,9 @@ class Frame:
         elif self.parent is not None:
             self.parent.change_up(var, val)
         
-
-
 class UserFunc:
     '''
-    Class the represents user generated functions
+    Class the represents user generated functions.
     '''
     def __init__(self, arguments, frame, function):
         
@@ -128,7 +112,6 @@ class UserFunc:
         new_frame.parent = self.frame
 
         if len(arguments) != len(self.arguments):
-            # print("SchemeEvaluationError")
             raise SchemeEvaluationError
 
         for i, arg in enumerate(arguments):
@@ -137,14 +120,15 @@ class UserFunc:
         return evaluate(self.function, new_frame)
 
     def __str__(self):
-        # return f"{self.arguments}, {self.frame}, {self.function}"
         return f"{self.function}"
 
-
 class Pair:
+    """
+    Class that represents one "link" in a linked list. 
+    """
     def __init__(self, car, cdr):
-        self.car = car # cur
-        self.cdr = cdr # next
+        self.car = car
+        self.cdr = cdr
 
     def __str__(self):
         if self.cdr is None:
@@ -154,7 +138,6 @@ class Pair:
 
 
     def is_list(self, post_list = None):
-        # print(self)
         if isinstance(self, Pair) is False:
             return scheme_bools["#f"]
 
@@ -177,7 +160,6 @@ class Pair:
         
         cur = 0
         while True:
-            # print(cur, index)
             if cur == index:
                 return self.car
             else:
@@ -224,7 +206,6 @@ class Pair:
         for next_list in to_append:
             while True:
                 if self_copy == Nil():
-                    # self_copy.cdr = evaluate(next_list, frame).copy()
                     self_copy.cdr = next_list.copy()
                     break
 
@@ -243,6 +224,9 @@ class Pair:
         return saved 
 
 class Nil:
+    """
+    Class that represents both an empty list and the end of a linked list. 
+    """
     def __init__(self):
         self.name = "nil"
     
@@ -300,14 +284,12 @@ def number_or_symbol(value):
         except ValueError:
             return str(value)
 
-
 def handle_add(to_add, tokenized):
     if to_add != "":
         tokenized.append(to_add)
         to_add = ""
 
     return to_add, tokenized
-
 
 def tokenize(inp_str):
     """
@@ -319,8 +301,6 @@ def tokenize(inp_str):
                       expression
 
     """
-    # if len(inp_str) > 1:
-    #     print(inp_str)
     tokenized = []
     to_add = ""
     comment = False
@@ -351,18 +331,17 @@ def tokenize(inp_str):
 
     return tokenized
 
-
 def eval_token(token):
+    """
+    Determines the type of token to be added to the tokenized list. 
+    """
     try:
-        float(token)
         if float(token) == int(float(token)):
             return int(token)
         else:
             return float(token)
     except:
-        str(token)
         return str(token)
-
 
 def parse(tokens):
     """
@@ -447,23 +426,17 @@ def parse(tokens):
                 result.append(token)
         return result
 
-    # print(tokens)
     result = convert_list(tokens)[0]
     
-    # if len(result) > 1:
-    #     return convert_list(tokens)
-
     return result
-
 
 ######################
 # Built-in Functions #
 ######################
 
-
 def equal(numbers):
     '''
-    tests if a list follows ==
+    Test if a list follows the = property
     '''
     for i in range(len(numbers) - 1):
         if numbers[i] != numbers[i+1]:
@@ -472,7 +445,7 @@ def equal(numbers):
 
 def geq(numbers):
     '''
-    tests if a list follows >=
+    Tests if a list follows the >= property
     '''
     for i in range(len(numbers) - 1):
         if numbers[i] < numbers[i+1]:
@@ -481,7 +454,7 @@ def geq(numbers):
 
 def greaterthan(numbers):
     '''
-    tests if a list follows >
+    Tests if a list follows the > property
     '''
     for i in range(len(numbers) - 1):
         if numbers[i] <= numbers[i+1]:
@@ -490,7 +463,7 @@ def greaterthan(numbers):
 
 def leq(numbers):
     '''
-    tests if a list follows <=
+    Tests if a list follows the <= poperty
     '''
     for i in range(len(numbers) - 1):
         if numbers[i] > numbers[i+1]:
@@ -499,17 +472,16 @@ def leq(numbers):
 
 def lessthan(numbers):
     '''
-    tests if a list follows <
+    Tests if a list follows the < property
     '''
     for i in range(len(numbers) - 1):
         if numbers[i] >= numbers[i+1]:
             return False
     return True
 
-
 def product(factors):
     """
-    Computes the product of a list
+    Computes the product of every value in a list
     """
     out = 1
     for val in factors:
@@ -530,7 +502,7 @@ def divide(dividends):
 
 def if_logic(tree, frame):
     """
-    handles the logic for if-statements
+    Handles the logic for if-statements
     """
     if evaluate(tree[1], frame):
         return evaluate(tree[2], frame)
@@ -539,7 +511,7 @@ def if_logic(tree, frame):
 
 def andor_logic(tree, frame, boolean):
     '''
-    handles the logic for both and and or
+    Handles the logic for both and and or
     '''
     
     try_andor = []
@@ -551,19 +523,27 @@ def andor_logic(tree, frame, boolean):
     return not boolean
 
 def not_logic(args):
+    """
+    'Not's' an argument
+    """
     if len(args) != 1:
         raise SchemeEvaluationError
     else:
         return not args[0]
 
-
 def cons(args):
+    """
+    Initializes an istance of the Pair class. 
+    """
     if len(args) != 2:
         raise SchemeEvaluationError
     new_pair = Pair(args[0], args[1])
     return new_pair
 
 def car(args):
+    """
+    Returns the 'value' element in a Pair instance
+    """
     if len(args) != 1:
         raise SchemeEvaluationError
     if isinstance(args[0], Pair) is False:
@@ -571,6 +551,9 @@ def car(args):
     return args[0].car
 
 def cdr(args):
+    """
+    Returns the 'next' element in a Pair instance
+    """
     if len(args) != 1:
         raise SchemeEvaluationError
     if isinstance(args[0], Pair) is False:
@@ -578,6 +561,9 @@ def cdr(args):
     return args[0].cdr
 
 def create_list(args):
+    """
+    Creates a list of consecutive arguments
+    """
     if len(args) == 0:
         return Nil()
     if len(args) == 1:
@@ -585,16 +571,19 @@ def create_list(args):
     else:
         return Pair(args[0], create_list(args[1:]))
 
-
-
 def list_question(args):
+    """
+    Determines if an argument is a list or not
+    """
     try:
-        # print(args[0].is_list())
         return args[0].is_list()
     except:
         return False
         
 def length(args):
+    """
+    Returns the length of a list
+    """
     if len(args) > 1:
         raise SchemeEvaluationError
     try:
@@ -605,6 +594,9 @@ def length(args):
     return args[0].get_length()
 
 def listref(args):
+    """
+    Returns the element in list corresponding to input index
+    """
     arg_list = args[0]
     arg_ind = args[1]
     
@@ -620,6 +612,9 @@ def listref(args):
             raise SchemeEvaluationError
 
 def append_func(args):
+    """
+    Concatenates multiple lists into one
+    """
     for pos_list in args:
         try:
             pos_list.is_list()
@@ -632,9 +627,10 @@ def append_func(args):
     else:
         return args[0].pair_append(args[1:])
 
-
-
 def map_func(args):
+    """
+    Establishes python's 'map' function
+    """
     func = args[0]
     to_apply_list = args[1]
     try:
@@ -652,7 +648,9 @@ def map_func(args):
     return copied_list
 
 def filter_func(args):
-    
+    """
+    Establishes python's 'filter' function
+    """
     func = args[0]
     to_apply_list = args[1]
     try:
@@ -678,6 +676,9 @@ def filter_func(args):
     return saved
 
 def reduce(args):
+    """
+    Establishes python's 'reduce' function 
+    """
     func = args[0]
     to_apply_list = args[1]
     initial = args[2]
@@ -693,18 +694,26 @@ def reduce(args):
         final = func([final, cur])
     return final
 
-
-
 def begin(tree, frame):
+    """
+    Given multiple consecutive arguemnts, return only the evaluation of the last argument
+    """
     for i, arg in enumerate(tree[1:]):
         if i == len(tree) - 2:
             return evaluate(arg, frame)
         evaluate(arg, frame)
 
 def del_func(tree, frame):
+    """
+    Deletes a current frame's variable binding
+    """
     return frame.soft_del(tree[1])
 
 def let(tree, frame):
+    """
+    Establishes temporary variables, only to be evaluated 
+    during the evaluation of the broader expression
+    """
     new_frame = Frame()
     new_frame.parent = frame
 
@@ -717,8 +726,11 @@ def let(tree, frame):
     return evaluate(tree[2], new_frame)
 
 def setbang(tree, frame):
+    """
+    Changes the value of a existing variable in the nearest frame to the input 
+    """
     val_update = evaluate(tree[2], frame)
-    var_update = tree[1] #evaluate(tree[1], frame)
+    var_update = tree[1] 
 
     if var_update in frame:
         
@@ -727,7 +739,6 @@ def setbang(tree, frame):
         raise SchemeNameError
 
     return val_update
-
 
 scheme_builtins = {
     "+": sum,
@@ -760,8 +771,6 @@ scheme_builtins = {
 
 new_specforms = {
    
-    # define x length
-    # "x ": length
     "del":del_func,
     "set!":setbang,
     "let":let,
@@ -773,13 +782,10 @@ new_specforms = {
 
 }
 
-
 scheme_bools = {
     "#t":True,
     "#f":False,
 }
-
-
 
 builtins = Frame()
 builtins.assignments = scheme_builtins
@@ -789,15 +795,13 @@ def create_builtingframe():
     builtins.assignments = scheme_builtins
     return builtins
 
-
-
 ##############
 # Evaluation #
 ##############
 
 def convert_to_cons(tree):
     '''
-    converts a list argument to a cons expression
+    Converts a list argument to a cons expression
     '''
     if len(tree) == 1:
         return "nil"
@@ -806,36 +810,28 @@ def convert_to_cons(tree):
         return ["cons", tree[1], "nil"]
 
     else:
-        # print(["cons", tree[1], evaluate(tree[2], frame)])
         new_exp = ["list"] + tree[2:]
-        # print(evaluate(new_exp, frame))
         return ["cons", tree[1], convert_to_cons(new_exp)]
-
 
 def reduce_helper(tree, frame):
     '''
-    handles the reduce function
+    Handles the reduce function
     '''
     function = tree[1]
 
     inital = tree[3]
 
-
     pair_expression = evaluate(tree[2], frame)
     exp_length = pair_expression.get_length()
-    # copied_exp = pair_expression.copy()    
 
     final = inital
 
     for i in range(exp_length):
         cur_num = pair_expression.at_index(i) 
         
-        # print(function, evaluate(final, frame), cur_num)
         final = evaluate([function, evaluate(final, frame), cur_num], frame)      
-        # print(final)  
         
     return final
-
 
 def handle_strings(tree, frame):
     '''
@@ -851,7 +847,6 @@ def handle_strings(tree, frame):
     var_val = frame.get_item(str(tree))    
 
     return var_val
-
 
 def refactor_input(tree, frame):
     """
@@ -869,16 +864,14 @@ def refactor_input(tree, frame):
         new_inp = [tree[0], tree[1][0], ["lambda", [], tree[2]]]
     return evaluate(new_inp, frame)
 
-
 def operate(operator, operands, frame=None):
     '''
-    Computes the output ofa builtin method
+    Computes the output of a builtin method
     '''
     
     if frame is not None:
         for i, operand in enumerate(operands):
             if operand in frame:
-                # print(operand)
                 
                 operands[i] = frame.get_item(operand)
 
@@ -888,13 +881,10 @@ def operate(operator, operands, frame=None):
 
     return scheme_builtins[operator](operands)
 
-
 def evaluate(tree, frame=None):
     '''
     Evaluates a given inputted line, based on previous lines
     '''
-    # print(tree)
-    # print()
     
     if frame is None:
         frame = Frame()
@@ -905,7 +895,6 @@ def evaluate(tree, frame=None):
             return tree
 
         case str(tree):
-            # print(tree, type(frame))
             return handle_strings(tree, frame)
 
         case Nil():
@@ -917,9 +906,6 @@ def evaluate(tree, frame=None):
         case list(tree):
             if len(tree) == 0:                
                 raise SchemeEvaluationError
-
-            # if tree[0] == "fizzbuzz":
-            #     raise SchemeNameError
 
             if tree[0] == "HISTORY":
                 return frame.history()
@@ -955,7 +941,6 @@ def evaluate(tree, frame=None):
                 return andor_logic(tree, frame, True)
 
 
-
             if tree[0] == "begin":
                 return begin(tree, frame)
             
@@ -971,7 +956,6 @@ def evaluate(tree, frame=None):
             new_tree = []
             
             for val in tree: 
-                # print(val)
                 new_tree.append(evaluate(val, frame) )
             tree = new_tree
             
@@ -980,25 +964,20 @@ def evaluate(tree, frame=None):
                 raise SchemeEvaluationError
             return function(tree[1:])
 
-
-
-counter = [0]
 def result_and_frame(tree, frame=None):
     '''
     Allows for the storing of multiple lines of inputs
     '''
-    print()
-    print(f"{counter[0]} INPUT:", tree)
-    counter[0] += 1
     if frame is None:
         frame = Frame()
         frame.parent = create_builtingframe()
 
     return (evaluate(tree, frame), frame)
 
-
 def evaluate_file(file_name, frame=None):
-    
+    """
+    Evaluates scheme code inputted throough a file
+    """
     file = open(file_name, mode="r") 
     tokenized_file = tokenize(file.read())
     parsed_file = parse(tokenized_file)
@@ -1014,10 +993,8 @@ def repl(verbose=False, frame=None):
         verbose: optional argument, if True will display tokens and parsed
             expression in addition to more detailed error output.
     """
-    # import traceback
     
-
-    _, frame = result_and_frame(["+"], frame)  # make a global frame
+    _, frame = result_and_frame(["+"], frame) 
     while True:
         input_str = input("in> ")
         if input_str == "QUIT":
@@ -1037,3 +1014,5 @@ def repl(verbose=False, frame=None):
             print("Error>", repr(e))
 
 
+if __name__ == "__main__":
+    repl(True)
